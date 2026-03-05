@@ -368,10 +368,30 @@
   .hero-links    { animation: fadeUp 0.6s ease both 0.5s; }
   .hero-fields   { animation: fadeUp 0.6s ease both 0.6s; }
 
+  /* ── HAMBURGER ── */
+  .hamburger {
+    display: none; flex-direction: column; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 4px;
+  }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--ink); transition: all 0.3s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 820px) {
     nav { padding: 0 1.5rem; }
-    .nav-links { gap: 1.2rem; }
+    .hamburger { display: flex; }
+    .nav-links {
+      display: none; position: fixed;
+      top: 64px; left: 0; right: 0;
+      background: var(--bg); flex-direction: column;
+      gap: 0; border-bottom: 1px solid var(--rule); z-index: 99;
+    }
+    .nav-links.open { display: flex; }
+    .nav-links li { border-bottom: 1px solid var(--rule); }
+    .nav-links a { display: block; padding: 1rem 1.5rem; font-size: 0.85rem; }
+    .nav-links .btn-cv { margin: 1rem 1.5rem; display: inline-block; }
     .hero { grid-template-columns: 1fr; min-height: auto; }
     .hero-text { padding: 4rem 2rem 3rem; }
     .hero-image { display: none; }
@@ -390,7 +410,10 @@
 <!-- NAV -->
 <nav>
   <a href="#home" class="nav-logo">Vimal Balasubramaniam</a>
-  <ul class="nav-links">
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="nav-links">
     <li><a href="#home" class="active">Home</a></li>
     <li><a href="#research">Research</a></li>
     <li><a href="#policy">Policy</a></li>
@@ -907,6 +930,21 @@
 </footer>
 
 <script>
+  // Hamburger menu
+  const hamburger = document.getElementById('hamburger');
+  const navLinksEl = document.getElementById('nav-links');
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    navLinksEl.classList.toggle('open');
+  });
+  // Close menu when a link is clicked
+  navLinksEl.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      navLinksEl.classList.remove('open');
+    });
+  });
+
   // Active nav highlight on scroll
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
