@@ -116,7 +116,7 @@
   h1 em { font-style: italic; color: var(--ink-light); }
   .hero-bio {
     font-size: 1.05rem; color: var(--ink-light);
-    line-height: 1.8; max-width: 44ch; margin-bottom: 2.5rem;
+    line-height: 1.8; max-width: 56ch; margin-bottom: 2.5rem;
   }
   .hero-links { display: flex; gap: 1rem; flex-wrap: wrap; }
   .hero-fields { margin-top: 2.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -130,20 +130,20 @@
   }
   .hero-image::before {
     content: ''; position: absolute; inset: 0;
-    background: linear-gradient(to top, rgba(26,26,46,0.4) 0%, transparent 35%);
-    z-index: 2; pointer-events: none;
+    background: linear-gradient(145deg, #e8dfc8 0%, #d0c4a8 100%);
   }
   .hero-image-inner {
-    position: relative; z-index: 1; height: 100%; width: 100%;
+    position: relative; z-index: 1; height: 100%;
+    display: flex; align-items: flex-start; justify-content: flex-end; padding: 3rem 3rem 0 0;
   }
   .hero-portrait {
-    width: 100%; height: 100%;
-    object-fit: cover; object-position: top center; display: block;
+    width: 100%; max-width: 340px; aspect-ratio: 3/4;
+    object-fit: cover; object-position: top; display: block;
   }
   .hero-image-caption {
-    position: absolute; bottom: 2rem; left: 2rem; z-index: 3;
+    position: absolute; bottom: 2.5rem; left: 3rem; z-index: 2;
     font-family: var(--sans); font-size: 0.68rem;
-    letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,249,246,0.8);
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
   }
 
   /* ── NEWS TICKER ── */
@@ -421,7 +421,7 @@
     <div class="hero-eyebrow">Finance &amp; Economics · QMUL</div>
     <h1>Vimal Balasubramaniam</h1>
     <p class="hero-bio">
-      Associate Professor (Reader) in Finance and Economics at Queen Mary University of London, and Research Affiliate in Asset Pricing at the Centre for Economic Policy Research. I study household finance, asset pricing, real estate, and Indian financial markets.
+      Associate Professor (Reader) in Finance and Economics at Queen Mary University of London, and Research Affiliate in Asset Pricing at the Centre for Economic Policy Research. I study household finance, asset pricing, real estate, and Indian financial markets. BA from the University of Madras, MPP from the National University of Singapore, and DPhil from the University of Oxford.
     </p>
     <div class="hero-links">
       <a href="#research" class="btn btn-primary">Research</a>
