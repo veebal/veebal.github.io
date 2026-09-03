@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECN388 Warm-up — Live Results</title>
+<style>
+  :root { --navy:#253967; --accent:#004c99; --ink:#1a1a1a; --muted:#667; --grey:#eef0f4; --surface:#fafafa; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,"Segoe UI",Arial,sans-serif; margin:0; background:var(--surface); color:var(--ink); }
+  .wrap { max-width:1060px; margin:0 auto; padding:20px 22px 60px; }
+  h1 { color:var(--navy); font-size:1.7rem; margin:6px 0 2px; }
+  .meta { color:var(--muted); margin-bottom:18px; font-size:1.05rem; }
+  .tiles { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+  .tile { background:#fff; border:1px solid #e2e5ea; border-radius:12px; padding:14px 22px; min-width:150px; }
+  .tile .big { font-size:2.4rem; font-weight:700; color:var(--navy); line-height:1.1; }
+  .tile .lbl { color:var(--muted); font-size:.95rem; }
+  .card { background:#fff; border:1px solid #e2e5ea; border-radius:12px; padding:18px 22px; margin-bottom:18px; }
+  h2 { font-size:1.15rem; color:var(--navy); margin:0 0 12px; }
+  .hist { display:flex; align-items:flex-end; gap:3px; height:180px; }
+  .hist .col { flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
+  .hist .bar { width:100%; background:var(--accent); border-radius:4px 4px 0 0; min-height:2px; }
+  .hist .cnt { font-size:.85rem; color:var(--ink); margin-bottom:2px; font-weight:600; }
+  .hist .x { font-size:.8rem; color:var(--muted); margin-top:4px; }
+  .rowbar { display:flex; align-items:center; margin:7px 0; gap:10px; }
+  .rowbar .lab { width:220px; font-size:1rem; text-align:right; color:var(--ink); }
+  .rowbar .track { flex:1; background:var(--grey); border-radius:6px; height:22px; }
+  .rowbar .fill { height:100%; background:var(--accent); border-radius:6px; min-width:2px; }
+  .rowbar .val { width:60px; font-weight:600; }
+  .note { color:var(--muted); font-size:.9rem; margin-top:8px; }
+  #empty { text-align:center; padding:60px 0; color:var(--muted); font-size:1.3rem; }
+  .pulse { display:inline-block; width:10px; height:10px; border-radius:50%; background:#0f6608; margin-right:6px; animation:p 2s infinite; }
+  @keyframes p { 0%,100%{opacity:1} 50%{opacity:.3} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ECN388 Warm-up Quiz — Where are we as a cohort?</h1>
+  <div class="meta"><span class="pulse"></span>Live — updates automatically · <span id="stamp">waiting for first load…</span></div>
+
+  <div id="empty">Waiting for the first submissions…<br><small>www.vimalb.com/ecn388/quiz</small></div>
+
+  <div id="dash" style="display:none">
+    <div class="tiles">
+      <div class="tile"><div class="big" id="tN">–</div><div class="lbl">responses</div></div>
+      <div class="tile"><div class="big" id="tAvg">–</div><div class="lbl">average score / 20</div></div>
+      <div class="tile"><div class="big" id="tMed">–</div><div class="lbl">median</div></div>
+      <div class="tile"><div class="big" id="tHi">–</div><div class="lbl">best score</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Score distribution</h2>
+      <div class="hist" id="hist"></div>
+      <div class="note">14+ great shape · 9–13 normal after summer · below 9 worth a Year 3 refresher</div>
+    </div>
+
+    <div class="card">
+      <h2>How we did by topic (% of questions answered correctly)</h2>
+      <div id="topics"></div>
+    </div>
+
+    <div class="card">
+      <h2>Toughest questions (lowest % correct)</h2>
+      <div id="worst"></div>
+      <div class="note">We'll meet all of these properly during the module — nothing here is assumed knowledge.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Published-CSV URL of the linked Google Sheet (File > Share > Publish to web > CSV)
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfNpNkULxiOpnW9lgtcpNPQ2g__OlZvHvmk5csUF4i4cnRcTsrN06ut4Ni_7i1MZMMrlPKLL_xp1Mp/pub?gid=404996389&single=true&output=csv";
+// ============================================================
+
+const KEY = [0,2,1,2,3,1,2,1,2,1,1,1,1,2,1,2,0,1,1,1];
+const TOPIC = ["Present value","Present value","Present value","Portfolio maths","Portfolio maths",
+ "Diversification","Diversification","Diversification","CAPM","CAPM","CAPM","Market efficiency",
+ "Market efficiency","Bonds","Bonds","Bonds","Options","Options","Statistics","Statistics"];
+const QSHORT = ["PV of £100","Perpetuity value","Gordon growth","Portfolio E[r]","Portfolio beta",
+ "What diversification removes","Non-diversifiable risk","When diversification works","CAPM expected return",
+ "Meaning of beta","Alpha interpretation","Semi-strong EMH","EMH implication","Discount bond YTM",
+ "Rates up, prices?","Zero-coupon price","Volatility & calls","Put option payoff","Reading R²","E[die roll]"];
+
+function parseCSV(text){
+  // minimal CSV parser handling quoted fields
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cur); cur=""; }
+    else if(c==='\n'||c==='\r'){ if(cur!==""||row.length){row.push(cur); rows.push(row); row=[]; cur="";} }
+    else cur+=c;
+  }
+  if(cur!==""||row.length){row.push(cur); rows.push(row);}
+  return rows;
+}
+
+async function refresh(){
+  try{
+    const r=await fetch(CSV_URL+(CSV_URL.includes("?")?"&":"?")+"cb="+Date.now(),{cache:"no-store"});
+    const rows=parseCSV(await r.text());
+    const hdr=rows[0].map(h=>h.toLowerCase());
+    const iNick=hdr.findIndex(h=>h.includes("nick")), iAns=hdr.findIndex(h=>h.includes("answer"));
+    const showTest=new URLSearchParams(location.search).has("test");
+    const subs=[];
+    for(const row of rows.slice(1)){
+      const nick=(row[iNick]||"").trim();
+      if(!showTest && nick.toUpperCase().startsWith("CLAUDE-TEST")) continue;
+      let ans; try{ ans=JSON.parse(row[iAns]); }catch(e){ continue; }
+      if(!Array.isArray(ans)) continue;
+      subs.push(ans);
+    }
+    render(subs);
+    document.getElementById("stamp").textContent="last updated "+new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById("stamp").textContent="fetch failed — retrying…";
+  }
+}
+
+function render(subs){
+  const n=subs.length;
+  document.getElementById("empty").style.display = n? "none":"block";
+  document.getElementById("dash").style.display = n? "block":"none";
+  if(!n) return;
+
+  const scores=subs.map(a=>a.reduce((s,v,i)=>s+(v===KEY[i]?1:0),0)).sort((a,b)=>a-b);
+  const avg=scores.reduce((a,b)=>a+b,0)/n;
+  const med=n%2? scores[(n-1)/2] : (scores[n/2-1]+scores[n/2])/2;
+  document.getElementById("tN").textContent=n;
+  document.getElementById("tAvg").textContent=avg.toFixed(1);
+  document.getElementById("tMed").textContent=med;
+  document.getElementById("tHi").textContent=scores[n-1];
+
+  // histogram 0..20
+  const counts=Array(21).fill(0); scores.forEach(s=>counts[s]++);
+  const mx=Math.max(...counts,1);
+  document.getElementById("hist").innerHTML=counts.map((c,s)=>
+    `<div class="col">${c?`<div class="cnt">${c}</div>`:""}<div class="bar" style="height:${150*c/mx}px"></div><div class="x">${s%2==0?s:""}</div></div>`).join("");
+
+  // per-topic
+  const tstat={};
+  TOPIC.forEach((t,i)=>{ tstat[t]=tstat[t]||{ok:0,n:0};
+    subs.forEach(a=>{ tstat[t].n++; if(a[i]===KEY[i]) tstat[t].ok++; }); });
+  document.getElementById("topics").innerHTML=Object.entries(tstat)
+    .sort((a,b)=>b[1].ok/b[1].n - a[1].ok/a[1].n)
+    .map(([t,v])=>{const pc=Math.round(100*v.ok/v.n);
+      return `<div class="rowbar"><div class="lab">${t}</div><div class="track"><div class="fill" style="width:${pc}%"></div></div><div class="val">${pc}%</div></div>`;}).join("");
+
+  // toughest questions
+  const qstat=KEY.map((k,i)=>({i, pc: Math.round(100*subs.filter(a=>a[i]===k).length/n)}));
+  qstat.sort((a,b)=>a.pc-b.pc);
+  document.getElementById("worst").innerHTML=qstat.slice(0,5)
+    .map(q=>`<div class="rowbar"><div class="lab">Q${q.i+1} · ${QSHORT[q.i]}</div><div class="track"><div class="fill" style="width:${q.pc}%"></div></div><div class="val">${q.pc}%</div></div>`).join("");
+}
+
+refresh();
+setInterval(refresh, 12000);
+</script>
+</body>
+</html>
