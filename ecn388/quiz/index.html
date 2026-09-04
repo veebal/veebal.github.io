@@ -112,6 +112,43 @@ QUESTIONS.forEach((qu,i)=>{
   form.appendChild(div);
 });
 
+// Progress persistence: restore in-flight answers after a refresh/crash; cleared on submit
+const SAVE_KEY = "ecn388-warmup-2026";
+function saveProgress(){
+  const answers = QUESTIONS.map((qu,i)=>{
+    const sel=document.querySelector(`input[name=q${i}]:checked`);
+    return sel?parseInt(sel.value):null;
+  });
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({nick:document.getElementById("nick").value, answers})); }catch(e){}
+}
+try{
+  const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+  if(saved && saved.submitted){
+    // already submitted on this device: lock the form so a reload doesn't allow a second attempt
+    document.getElementById("nick").value = saved.nick || "";
+    document.querySelectorAll("#quiz input").forEach(inp=>inp.disabled=true);
+    document.getElementById("submitbtn").disabled = true;
+    document.getElementById("submitcard").querySelector(".note").textContent =
+      "You have already submitted this quiz on this device — thank you!";
+  } else if(saved){
+    document.getElementById("nick").value = saved.nick || "";
+    (saved.answers||[]).forEach((v,i)=>{
+      if(v!==null && v!==undefined){
+        const inp=document.querySelector(`input[name=q${i}][value="${v}"]`);
+        if(inp) inp.checked=true;
+      }
+    });
+    const n = (saved.answers||[]).filter(v=>v!==null&&v!==undefined).length;
+    if(n>0){
+      const note=document.createElement("p"); note.className="sub";
+      note.textContent = `Welcome back — we restored the ${n} answer${n>1?"s":""} you had already given.`;
+      form.parentNode.insertBefore(note, form);
+    }
+  }
+}catch(e){}
+form.addEventListener("change", saveProgress);
+document.getElementById("nick").addEventListener("input", saveProgress);
+
 function grade(){
   const answers=[]; let unanswered=0;
   QUESTIONS.forEach((qu,i)=>{
@@ -151,6 +188,9 @@ function grade(){
   body.append(FORM_FIELDS.topics, JSON.stringify(Object.fromEntries(Object.entries(topics).map(([t,v])=>[t,`${v.ok}/${v.n}`]))));
   body.append(FORM_FIELDS.answers, JSON.stringify(answers));
   fetch(FORM_URL,{method:"POST",mode:"no-cors",body}).catch(()=>{});
+
+  // mark this device as done so a reload doesn't offer a blank quiz again
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({nick:document.getElementById("nick").value, submitted:true})); }catch(e){}
 }
 </script>
 </body>
